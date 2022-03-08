@@ -40,12 +40,13 @@ fn main() {
     let mut counter = 1;
     let mut time = args.work;
     let mut playing = true;
-    let mut color = Color::Green;
+    let mut color = Color::DarkGreen;
     let mut stdout = stdout();
+
     enable_raw_mode().unwrap();
 
     loop {
-        if poll(Duration::from_secs(0)).unwrap() {
+        if poll(Duration::from_secs(1)).unwrap() {
             match read().unwrap() {
                 // key listener
                 Event::Key(KeyEvent {
@@ -75,49 +76,47 @@ fn main() {
                 _ => (),
             }
             if playing {
-                color = Color::Green;
+                color = Color::DarkGreen;
             } else {
-                color = Color::Red;
+                color = Color::DarkRed;
             }
-        } else {
-            let out = display(time, &pomodoro);
-            execute!(
-                stdout,
-                Clear(ClearType::All),
-                cursor::MoveTo(0, 0),
-                SetForegroundColor(color),
-                Print(out),
-            )
-            .unwrap();
-            execute!(stdout, cursor::MoveTo(0, 1)).unwrap();
+        }
+        
+        let out = display(time, &pomodoro);
+        execute!(
+            stdout,
+            Clear(ClearType::All),
+            cursor::MoveTo(0, 0),
+            SetForegroundColor(color),
+            Print(out),
+        )
+        .unwrap();
 
-            if playing {
-                time -= 1;
-            }
+        if playing {
+            time -= 1;
+        }
 
-            if time == 0 {
-                match pomodoro {
-                    Pomodoro::Work => {
-                        if counter == 4 {
-                            time = args.long;
-                            pomodoro = Pomodoro::Long;
-                            counter = 0;
-                            notification("Long break start!".to_string(), &args.execute);
-                        } else {
-                            time = args.short;
-                            pomodoro = Pomodoro::Short;
-                            notification("Short break start!".to_string(), &args.execute);
-                        }
-                        counter += 1;
+        if time == 0 {
+            match pomodoro {
+                Pomodoro::Work => {
+                    if counter == 4 {
+                        time = args.long;
+                        pomodoro = Pomodoro::Long;
+                        counter = 0;
+                        notification("Long break start!".to_string(), &args.execute);
+                    } else {
+                        time = args.short;
+                        pomodoro = Pomodoro::Short;
+                        notification("Short break start!".to_string(), &args.execute);
                     }
-                    _ => {
-                        time = args.work;
-                        pomodoro = Pomodoro::Work;
-                        notification("Work start!".to_string(), &args.execute);
-                    }
+                    counter += 1;
+                }
+                _ => {
+                    time = args.work;
+                    pomodoro = Pomodoro::Work;
+                    notification("Work start!".to_string(), &args.execute);
                 }
             }
-            thread::sleep(Duration::from_secs(1))
         }
     }
     disable_raw_mode().unwrap();
